@@ -3,42 +3,32 @@ package com.africa.pru.connector;
 import java.io.File;
 
 import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.java.DataSet;
-import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.kafka.KafkaSink;
 import org.apache.flink.streaming.util.serialization.DeserializationSchema;
 import org.apache.flink.streaming.util.serialization.SerializationSchema;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 
 @Component
-@PropertySource("classpath:application.properties")
-public class WriteToKafka {
-	
-	@Value("${bootstrapServer}")
+public class KafkaWriter {
+
+	@Value("${bootstrap.server}")
 	private static String bootstrapServer;
 
 	@Value("${topic}")
 	private static String topic;
 
-	public static void main(String[] args) throws Exception {
 
+	public static void	writeToKafka() throws Exception{
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		File file = new File("ILFlatFile.txt");
 		String path = file.getAbsolutePath();
-		
-		DataStream<String> sourceData= env.readTextFile(path);
-		
-		//sourceData.writeAsText("result.txt");
-		//sourceData.print();
-		
-		
-		sourceData.addSink(new KafkaSink<>("10.4.12.59:9092", "testtopic1", new SimpleStringSchema()));
+
+		DataStream<String> sourceData = env.readTextFile(path).setParallelism(1);
+		sourceData.addSink(new KafkaSink<>(bootstrapServer, topic, new SimpleStringSchema()));
 
 		env.execute();
 	}
